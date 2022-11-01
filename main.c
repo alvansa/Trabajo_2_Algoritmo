@@ -16,25 +16,13 @@ void mostrar_lista(struct Nodo *head)
 
     while (head != NULL)
     {
-        printf(" %d -> ", head->data);
+        printf(" %d / %d -> ", head->data,head->rep);
         head = head->sig;
     }
 
     printf("||- ");
 }
 
-struct Nodo *agregar_nodo(int num)
-{
-    struct Nodo *newNodo;
-    newNodo = (struct Nodo *)malloc(sizeof(struct Nodo));
-
-    newNodo->data = num;
-    newNodo->sig = head;
-
-    head = newNodo;
-
-    return head;
-}
 
 struct Nodo *agregar_nodo_ordenado(int num)
 {
@@ -43,6 +31,7 @@ struct Nodo *agregar_nodo_ordenado(int num)
 
     newNodo->data = num;
     newNodo->sig = head;
+    newNodo -> rep = 1;
 
     if (!head || newNodo->data < head->data)
     {
@@ -53,56 +42,15 @@ struct Nodo *agregar_nodo_ordenado(int num)
     {
         aux = head->sig;
 
-        while (aux && aux->data < newNodo->data)
+        while (aux && aux->data <= newNodo->data)
         {
+            if(aux -> data == num)
+                newNodo -> rep ++;
             newNodo->sig = aux;
             aux = aux->sig;
         }
         newNodo->sig->sig = newNodo;
         newNodo->sig = aux;
-    }
-
-    return head;
-}
-
-struct Nodo *eliminar_dato(int num)
-{
-    struct Nodo *aux, *aux2;
-
-    aux = head;
-    if (head == NULL)
-    {
-        printf("\nLista Vacia\n");
-        return head;
-    }
-    else
-    {
-        if (aux->data == num)
-        {
-            head = head->sig;
-            free(aux);
-        }
-        else
-        {
-            do
-            {
-                aux2 = aux;
-                aux = aux->sig;
-            } while (aux && aux->data != num);
-
-            if (aux)
-            {
-                //do{
-                    aux2->sig = aux->sig;
-                    free(aux);
-                //}while(aux2->sig->data != num);
-                
-            }
-            else
-            {
-                printf("\nEl dato no se encuentra en la lista\n");
-            }
-        }
     }
 
     return head;
@@ -114,8 +62,6 @@ struct Nodo *eliminar_nodo(int num){
     
     if (!head)
         return head;
-    // Until the head data is equal to the key move the head
-    // pointer
     while (head && head->data == num)
         head = head->sig;
     actual = head;
@@ -130,8 +76,54 @@ struct Nodo *eliminar_nodo(int num){
             previo = actual;
         actual = actual->sig;
     }
-   // if(actual == NULL)
-        //printf("\nEl dato no se encuentra en la lista\n");
+    return head;
+}
+
+struct Nodo *eliminar_mayor(int num){
+    struct Nodo *actual,*previo;
+
+    if (!head)
+        return head;
+    while (head && head->data == num)
+        head = head->sig;
+
+    actual = head;
+    previo = NULL;
+
+    while (actual) {
+        if (actual->data > num){
+            previo->sig = NULL;
+            free(actual);
+        }
+        else
+            previo = actual;
+        actual = actual->sig;
+    }
+    return head;
+    
+}
+
+
+struct Nodo *eliminar_menor(int num){
+    struct Nodo *actual,*previo;
+
+    if (!head)
+        return head;
+    while (head && head->data < num)
+        head = head->sig;
+
+    actual = head;
+    previo = NULL;
+    /*
+    while (actual) {
+        if (actual->data < num){
+            previo->sig = NULL;
+            free(actual);
+        }
+        else
+            previo = actual;
+        actual = actual->sig;
+    }*/
     return head;
 }
 
@@ -141,7 +133,7 @@ struct Nodo *busqueda(int num){
     while(aux != NULL)
     {   
         if(aux -> data == num){
-            printf("\nSe ha encontrado el numero buscado %d\n",num);
+            printf("\nSe ha encontrado el numero buscado %d // %d\n",aux->data,aux->rep);
             return head;
         }else
         aux = aux->sig;
@@ -177,11 +169,26 @@ int main(int argv, char **argc)
         printf("\n Mal uso del programa \n");
     }
 
-
+    
     for (i = 0; i < 5; i++){
         random = rand() % 20;
         printf("\nBuscar el numero %d\n",random);
         head = busqueda(random);
-    }
+    } 
+    /*
+    random = rand() % 20;
+    head = eliminar_menor(random);
+    printf("\nSe han eliminado todos los datos mayores a %d, y la lista es:\n",random);
+    mostrar_lista(head);
+    */
+
+
+    // Busqueda 
+    // Insertar
+    // Eliminar
+    // Eliminar mayor
+    // Eliminar menor
+    //
+
     return 0;
 }
