@@ -4,20 +4,23 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <time.h>
+#include <semaphore.h>
 
 pthread_rwlock_t rwlock = PTHREAD_RWLOCK_INITIALIZER;
 int LECTORES = 0;
+sem_t  sem;
+
+
+struct Message
+{
+    int id_sem, value;
+};
 
 struct Nodo
 {
     int data;
     int rep;
     struct Nodo *sig;
-};
-
-struct Message
-{
-    int id_sem, value;
 };
 
 struct Nodo *head = NULL;
@@ -28,13 +31,13 @@ void mostrar_lista(struct Nodo *head)
     while (head != NULL)
     {
         printf(" %d / %d -> ", head->data, head->rep);
-        head = head->sig;
+        head = head ->sig;
     }
 
     printf("||- ");
 }
 
-int busqueda(int num, int tipo)
+int busqueda(int num, int tipo,struct Nodo *head)
 {
     struct Nodo *aux;
     aux = head;
@@ -61,7 +64,7 @@ int busqueda(int num, int tipo)
     }
 }
 
-struct Nodo *agregar_nodo_ordenado(int numero)
+struct Nodo *agregar_nodo_ordenado(int numero,struct Nodo *head)
 {
 
     int num = numero;
@@ -70,7 +73,7 @@ struct Nodo *agregar_nodo_ordenado(int numero)
 
     pthread_rwlock_t *p;
 
-    if (busqueda(num, 1) == 1)
+    if (busqueda(num, 1,head) == 1)
     {
         // printf("\nEncontre el dato -> %d\n",num);
         return head;
@@ -104,15 +107,19 @@ struct Nodo *agregar_nodo_ordenado(int numero)
     }
 }
 
+
+
+
 void *usuarios(void *total)
 {
-    printf("\nHI\n");
+    
     int eleccion_1, eleccion_2,i,random,j;
     struct Message *m;
     int rep = 20;
     pthread_rwlock_t rwlock_lista; 
 
     m = (struct Message *) total ;
+    printf("\nProceso -> %d\n",m->id_sem);
     for (i = 0; i < m->value; i++)
     {
         //eleccion_1 = rand() % 2;
@@ -121,12 +128,14 @@ void *usuarios(void *total)
         switch (eleccion_1)
         {
         case 0: // escritor
+
             break;
         case 1: // lector
-            pthread_rwlock_rdlock(&rwlock_lista);
-            random = rand() % rep;
-            j = busqueda(random,0);
-            pthread_rwlock_unlock(&rwlock_lista);
+            sem_wait(&sem);
+            random = rand() % 50;
+            printf("\nEl proceso %d esta buscando el numero %d\n",m->id_sem,random);
+            j = busqueda(random,0,head);
+            sem_post(&sem);
             break;
         }
     }
@@ -135,31 +144,43 @@ void *usuarios(void *total)
 // ./t2.exe usuarios capacidad iteraciones
 int main(int argv, char **argc)
 {
-
+    srand(0);
     pthread_t *threads;
-    struct Message *mensaje;
+    pthread_attr_t attribute;
+    struct Message **mensaje;
     int i, cant, random, rep, usu, lec_conc;
 
-    mensaje = calloc(1,sizeof(struct Message));
+    mensaje = calloc(1, sizeof(struct Message));
     rep = 20;
     usu = atoi(argc[1]);
     lec_conc = atoi(argc[2]);
-    mensaje->value = atoi(argc[3]);
+    
 
     threads = calloc(usu, sizeof(pthread_t));
+    for(i = 0 ; i < usu ; i++) 
+        mensaje[i] = calloc(1,sizeof(struct Message));
 
     for(int j = 0; j < 100; j++){
         random = rand() % 50;
-        head = agregar_nodo_ordenado(random);
+        head = agregar_nodo_ordenado(random,head);
     }
-    mostrar_lista(head);
+    //mostrar_lista(head);
+
+    pthread_attr_init(&attribute);
+    pthread_attr_setdetachstate(&attribute, PTHREAD_CREATE_JOINABLE);
+
+    sem_init(&sem,0,lec_conc);
 
     for (i = 0; i < usu; i++)
     {
-        pthread_create(&threads[i], NULL, usuarios, (void *) mensaje);
+        mensaje[i] -> id_sem = i;
+        mensaje[i] -> value = atoi(argc[3]);
+        pthread_create(&threads[i], NULL, usuarios, (void *) mensaje[i]);
     }
+    for(i = 0; i < usu; i++)
+        pthread_join(threads[i],NULL);
 
-
+    sem_destroy(&sem);
     return 0;
 }
 
