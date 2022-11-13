@@ -135,6 +135,7 @@ void *usuarios(void *total)
             random = rand() % 50;
             printf("\nEl proceso %d esta buscando el numero %d\n",m->id_sem,random);
             j = busqueda(random,0,head);
+            fflush(stdout);
             sem_post(&sem);
             break;
         }
@@ -148,13 +149,13 @@ int main(int argv, char **argc)
     pthread_t *threads;
     pthread_attr_t attribute;
     struct Message **mensaje;
-    int i, cant, random, rep, usu, lec_conc;
+    int i, cant, random, rep, usu, lec_conc,iter;
 
     mensaje = calloc(1, sizeof(struct Message));
     rep = 20;
     usu = atoi(argc[1]);
     lec_conc = atoi(argc[2]);
-    
+    iter = atoi(argc[3]);
 
     threads = calloc(usu, sizeof(pthread_t));
     for(i = 0 ; i < usu ; i++) 
@@ -174,7 +175,7 @@ int main(int argv, char **argc)
     for (i = 0; i < usu; i++)
     {
         mensaje[i] -> id_sem = i;
-        mensaje[i] -> value = atoi(argc[3]);
+        mensaje[i] -> value = iter;
         pthread_create(&threads[i], NULL, usuarios, (void *) mensaje[i]);
     }
     for(i = 0; i < usu; i++)
